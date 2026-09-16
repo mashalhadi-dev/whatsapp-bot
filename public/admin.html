@@ -247,6 +247,8 @@
     </div>
 
     <script>
+      // Automatically target relative origin or current window host
+      const API_BASE = window.location.origin;
       const API_KEY = 'azzivone_secret_key_change_me';
 
       const state = {
@@ -271,7 +273,7 @@
         if (status === 'Connected') {
           statusMessage.textContent = 'WhatsApp is connected and active. Order notifications will send immediately.';
         } else if (status === 'Connecting') {
-          statusMessage.textContent = errorText || 'Generating QR code... Please wait.';
+          statusMessage.textContent = errorText || 'Initializing WhatsApp engine & generating QR code... Please wait.';
         } else {
           statusMessage.textContent = errorText || 'No active session. Scan the QR code to pair your device.';
         }
@@ -284,7 +286,7 @@
         }
 
         if (!state.qrCode) {
-          qrBox.innerHTML = '<div class="empty-state">Waiting for QR code...<br />The service requests a new code automatically.</div>';
+          qrBox.innerHTML = '<div class="empty-state">Waiting for QR code...<br />Puppeteer is starting up.</div>';
           return;
         }
 
@@ -327,7 +329,7 @@
 
       async function fetchStatus() {
         try {
-          const response = await fetch('/api/whatsapp/status');
+          const response = await fetch(`${API_BASE}/api/whatsapp/status`);
           if (!response.ok) throw new Error('Network error');
           const payload = await response.json();
           
@@ -335,7 +337,7 @@
           setStatusUI(payload.status || 'Disconnected', payload.error || '');
           renderQRCode();
         } catch (error) {
-          setStatusUI('Disconnected', 'Backend Microservice Unreachable (localhost:3000 offline).');
+          setStatusUI('Disconnected', 'Reconnecting to backend microservice...');
           state.qrCode = null;
           renderQRCode();
         }
@@ -343,7 +345,7 @@
 
       async function loadSettings() {
         try {
-          const response = await fetch('/api/admin/settings');
+          const response = await fetch(`${API_BASE}/api/admin/settings`);
           const payload = await response.json();
           state.phones = Array.isArray(payload.adminPhones) ? payload.adminPhones : [];
           renderPhones();
@@ -365,7 +367,7 @@
 
         try {
           settingsMessage.textContent = 'Saving settings...';
-          const response = await fetch('/api/admin/settings', {
+          const response = await fetch(`${API_BASE}/api/admin/settings`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
@@ -388,7 +390,7 @@
         settingsMessage.textContent = 'Sending test order notification...';
 
         try {
-          const response = await fetch('/api/test-notification', { 
+          const response = await fetch(`${API_BASE}/api/test-notification`, { 
             method: 'POST',
             headers: {
               'x-api-key': API_KEY,
