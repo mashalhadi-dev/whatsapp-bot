@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WhatsApp Admin Console | Azzivone</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --panel: #111827;
+        --panel-soft: #1f2937;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --primary: #22c55e;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --border: rgba(255, 255, 255, 0.09);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background: linear-gradient(135deg, #020817, #0f172a 38%, #111827);
+        color: var(--text);
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 1120px;
+        margin: 32px auto;
+        padding: 0 20px 40px;
+      }
+
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(1.8rem, 3vw, 2.4rem);
+        letter-spacing: -0.02em;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid var(--border);
+        font-weight: 700;
+        font-size: 0.9rem;
+        text-transform: capitalize;
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--warning);
+        box-shadow: 0 0 12px rgba(245, 158, 11, 0.7);
+      }
+
+      .connected .dot { background: var(--primary); box-shadow: 0 0 12px rgba(34, 197, 94, 0.7); }
+      .disconnected .dot { background: var(--danger); box-shadow: 0 0 12px rgba(239, 68, 68, 0.7); }
+      .connecting .dot { background: var(--warning); box-shadow: 0 0 12px rgba(245, 158, 11, 0.7); animation: pulse 1.5s infinite; }
+
+      @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.3; }
+        100% { opacity: 1; }
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1.1fr 1.4fr;
+        gap: 24px;
+      }
+
+      .panel {
+        background: rgba(17, 24, 39, 0.9);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 24px;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+      }
+
+      .panel h2 {
+        margin-top: 0;
+        margin-bottom: 18px;
+        font-size: 1.2rem;
+        letter-spacing: -0.01em;
+      }
+
+      .qr-box {
+        min-height: 340px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,0.02);
+        border: 1px dashed var(--border);
+        border-radius: 16px;
+        padding: 18px;
+      }
+
+      .qr-box img {
+        max-width: 280px;
+        width: 100%;
+        height: auto;
+        border-radius: 10px;
+        background: white;
+        padding: 12px;
+      }
+
+      .empty-state {
+        text-align: center;
+        color: var(--muted);
+        line-height: 1.6;
+        font-size: 0.95rem;
+      }
+
+      .settings-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 12px;
+      }
+
+      .phone-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+      }
+
+      input {
+        width: 100%;
+        border: 1px solid var(--border);
+        background: rgba(15, 23, 42, 0.8);
+        color: var(--text);
+        border-radius: 10px;
+        padding: 12px 14px;
+        font-size: 0.95rem;
+        outline: none;
+        transition: border-color 0.2s ease;
+      }
+
+      input:focus {
+        border-color: rgba(34, 197, 94, 0.5);
+      }
+
+      button {
+        appearance: none;
+        border: none;
+        border-radius: 10px;
+        padding: 12px 18px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.15s ease, opacity 0.15s ease;
+      }
+
+      button:hover { transform: translateY(-1px); }
+      button:active { transform: translateY(0); }
+      button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+      .primary-btn {
+        background: linear-gradient(135deg, #16a34a, #22c55e);
+        color: white;
+      }
+
+      .danger-btn {
+        background: rgba(239,68,68,0.1);
+        border: 1px solid rgba(239,68,68,0.4);
+        color: #fca5a5;
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      .muted {
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .toast {
+        margin-top: 16px;
+        min-height: 24px;
+        color: var(--text);
+        font-size: 0.92rem;
+        line-height: 1.4;
+      }
+
+      @media (max-width: 900px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .actions {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>WhatsApp Admin Console</h1>
+        <div id="statusPill" class="status-pill disconnected">
+          <span class="dot"></span>
+          <span id="statusText">Disconnected</span>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="panel">
+          <h2>WhatsApp Connection</h2>
+          <div class="qr-box" id="qrBox">
+            <div class="empty-state">
+              Waiting for QR code...<br />The service will request a new code automatically when needed.
+            </div>
+          </div>
+          <div class="toast" id="statusMessage">Checking connection status...</div>
+        </div>
+
+        <div class="panel">
+          <h2>Admin Phone Numbers</h2>
+          <div id="phoneList" class="settings-list"></div>
+          <div class="phone-row" style="margin-top: 14px;">
+            <input id="newPhone" type="text" inputmode="numeric" placeholder="923001234567" />
+            <button class="primary-btn" id="addPhoneBtn">Add</button>
+          </div>
+          <div class="actions">
+            <button class="primary-btn" id="saveSettingsBtn" style="flex: 1;">Save Settings</button>
+            <button class="primary-btn" id="testNotificationBtn" style="flex: 1; background: linear-gradient(135deg, #1e293b, #334155); border: 1px solid var(--border);">Test Notification</button>
+          </div>
+          <div class="toast" id="settingsMessage"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API_KEY = 'azzivone_secret_key_change_me';
+
+      const state = {
+        status: 'Disconnected',
+        qrCode: null,
+        phones: [],
+      };
+
+      const statusPill = document.getElementById('statusPill');
+      const statusText = document.getElementById('statusText');
+      const statusMessage = document.getElementById('statusMessage');
+      const qrBox = document.getElementById('qrBox');
+      const phoneList = document.getElementById('phoneList');
+      const settingsMessage = document.getElementById('settingsMessage');
+      const newPhoneInput = document.getElementById('newPhone');
+
+      function setStatusUI(status, errorText = '') {
+        state.status = status;
+        statusPill.className = 'status-pill ' + String(status).toLowerCase();
+        statusText.textContent = status;
+
+        if (status === 'Connected') {
+          statusMessage.textContent = 'WhatsApp is connected and active. Order notifications will send immediately.';
+        } else if (status === 'Connecting') {
+          statusMessage.textContent = errorText || 'Generating QR code... Please wait.';
+        } else {
+          statusMessage.textContent = errorText || 'No active session. Scan the QR code to pair your device.';
+        }
+      }
+
+      function renderQRCode() {
+        if (state.status === 'Connected') {
+          qrBox.innerHTML = '<div class="empty-state" style="color: var(--primary);">✔ Session Active<br /><small style="color: var(--muted);">Scan not required.</small></div>';
+          return;
+        }
+
+        if (!state.qrCode) {
+          qrBox.innerHTML = '<div class="empty-state">Waiting for QR code...<br />The service requests a new code automatically.</div>';
+          return;
+        }
+
+        qrBox.innerHTML = `<img src="${state.qrCode}" alt="WhatsApp QR Code" />`;
+      }
+
+      function renderPhones() {
+        phoneList.innerHTML = '';
+
+        if (!state.phones.length) {
+          phoneList.innerHTML = '<div class="muted">No admin numbers configured yet.</div>';
+          return;
+        }
+
+        state.phones.forEach((phone, index) => {
+          const row = document.createElement('div');
+          row.className = 'phone-row';
+          row.innerHTML = `
+            <input type="text" value="${phone}" data-index="${index}" placeholder="923001234567" aria-label="Admin phone number ${index + 1}" />
+            <button class="danger-btn" type="button" data-index="${index}">Remove</button>
+          `;
+          phoneList.appendChild(row);
+        });
+      }
+
+      phoneList.addEventListener('input', (e) => {
+        if (e.target.tagName === 'INPUT') {
+          const idx = e.target.dataset.index;
+          state.phones[idx] = e.target.value.trim();
+        }
+      });
+
+      phoneList.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON' && e.target.classList.contains('danger-btn')) {
+          const idx = e.target.dataset.index;
+          state.phones.splice(idx, 1);
+          renderPhones();
+        }
+      });
+
+      async function fetchStatus() {
+        try {
+          const response = await fetch('/api/whatsapp/status');
+          if (!response.ok) throw new Error('Network error');
+          const payload = await response.json();
+          
+          state.qrCode = payload.qrCode || null;
+          setStatusUI(payload.status || 'Disconnected', payload.error || '');
+          renderQRCode();
+        } catch (error) {
+          setStatusUI('Disconnected', 'Backend Microservice Unreachable (localhost:3000 offline).');
+          state.qrCode = null;
+          renderQRCode();
+        }
+      }
+
+      async function loadSettings() {
+        try {
+          const response = await fetch('/api/admin/settings');
+          const payload = await response.json();
+          state.phones = Array.isArray(payload.adminPhones) ? payload.adminPhones : [];
+          renderPhones();
+        } catch (error) {
+          settingsMessage.textContent = 'Unable to load saved phone numbers.';
+        }
+      }
+
+      async function saveSettings() {
+        const cleanedPhones = state.phones.map(p => p.trim()).filter(Boolean);
+        const validFormat = cleanedPhones.every(p => /^92\d{10}$/.test(p));
+
+        if (!validFormat && cleanedPhones.length > 0) {
+          settingsMessage.textContent = 'Error: Phone numbers must be in format 923001234567 (12 digits starting with 92).';
+          return;
+        }
+
+        const payload = { adminPhones: cleanedPhones };
+
+        try {
+          settingsMessage.textContent = 'Saving settings...';
+          const response = await fetch('/api/admin/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+
+          const result = await response.json();
+          settingsMessage.textContent = result.message || 'Settings saved successfully.';
+          if (response.ok) {
+            state.phones = result.settings?.adminPhones || cleanedPhones;
+            renderPhones();
+          }
+        } catch (error) {
+          settingsMessage.textContent = 'Failed to save settings.';
+        }
+      }
+
+      async function sendTestNotification() {
+        const btn = document.getElementById('testNotificationBtn');
+        btn.disabled = true;
+        settingsMessage.textContent = 'Sending test order notification...';
+
+        try {
+          const response = await fetch('/api/test-notification', { 
+            method: 'POST',
+            headers: {
+              'x-api-key': API_KEY,
+              'Content-Type': 'application/json'
+            }
+          });
+          const result = await response.json();
+          settingsMessage.textContent = result.message || 'Test notification dispatched successfully.';
+        } catch (error) {
+          settingsMessage.textContent = 'Failed to send test notification.';
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
+      document.getElementById('addPhoneBtn').addEventListener('click', () => {
+        const value = newPhoneInput.value.trim();
+        if (!value) {
+          settingsMessage.textContent = 'Please enter a valid phone number.';
+          return;
+        }
+
+        if (!/^92\d{10}$/.test(value)) {
+          settingsMessage.textContent = 'Invalid format. Example format: 923001234567';
+          return;
+        }
+
+        state.phones.push(value);
+        newPhoneInput.value = '';
+        settingsMessage.textContent = '';
+        renderPhones();
+      });
+
+      document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+      document.getElementById('testNotificationBtn').addEventListener('click', sendTestNotification);
+
+      // Initialization
+      loadSettings();
+      fetchStatus();
+      setInterval(fetchStatus, 3000);
+    </script>
+  </body>
+</html>
