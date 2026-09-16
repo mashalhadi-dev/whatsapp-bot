@@ -12,44 +12,23 @@ const API_SECRET_KEY = process.env.API_SECRET_KEY || 'azzivone_secret_key_change
 const SETTINGS_PATH = path.join(__dirname, 'settings.json');
 const DEFAULT_SETTINGS = { adminPhones: ['923001234567'] };
 
-// Dynamic Browser Resolution Strategy
+// Production Browser Path Resolver
 function resolveBrowserPath() {
+  if (process.env.PUPPETEER_EXECUTABLE_PATH && fsSync.existsSync(process.env.PUPPETEER_EXECUTABLE_PATH)) {
+    return process.env.PUPPETEER_EXECUTABLE_PATH;
+  }
   if (process.env.CHROME_BIN && fsSync.existsSync(process.env.CHROME_BIN)) {
     return process.env.CHROME_BIN;
   }
 
-  const localChromePath = path.join(
-    __dirname,
-    'browser-data',
-    'chrome',
-    'win64-146.0.7680.31',
-    'chrome-win64',
-    'chrome.exe'
-  );
-  if (fsSync.existsSync(localChromePath)) {
-    return localChromePath;
-  }
-
+  // Windows Local Fallbacks for Development
   const systemChromePaths = [
     'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-    `C:\\Users\\${process.env.USERNAME}\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe`
+    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'
   ];
   for (const chromePath of systemChromePaths) {
     if (fsSync.existsSync(chromePath)) {
-      console.log(`[Browser Engine] Using System Google Chrome: ${chromePath}`);
       return chromePath;
-    }
-  }
-
-  const systemEdgePaths = [
-    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe'
-  ];
-  for (const edgePath of systemEdgePaths) {
-    if (fsSync.existsSync(edgePath)) {
-      console.log(`[Browser Engine] Using System MS Edge: ${edgePath}`);
-      return edgePath;
     }
   }
 
@@ -162,7 +141,6 @@ const client = new Client({
   },
 });
 
-// SAFE RECONNECT LOGIC: Guarantees process cleanup before re-initializing
 function scheduleReconnect() {
   if (reconnectTimer || isInitializing) return;
 
